@@ -138,6 +138,14 @@ export function initializeIpcHandlers(appState: AppState): void {
     appState.centerAndShowWindow()
   })
 
+  // IPC handler for toggling chat
+  ipcMain.handle("toggle-chat", async () => {
+    const mainWindow = appState.getMainWindow()
+    if (mainWindow) {
+      mainWindow.webContents.send("toggle-chat")
+    }
+  })
+
   // LLM Model Management Handlers
   ipcMain.handle("get-current-llm-config", async () => {
     try {

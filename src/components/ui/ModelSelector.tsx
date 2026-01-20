@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 
 interface ModelConfig {
-  provider: "ollama" | "gemini" | "openai";
+  provider: "ollama" | "gemini" | "openai" | "groq";
   model: string;
   isOllama: boolean;
 }
 
 interface ModelSelectorProps {
-  onModelChange?: (provider: "ollama" | "gemini" | "openai", model: string) => void;
+  onModelChange?: (provider: "ollama" | "gemini" | "openai" | "groq", model: string) => void;
   onChatOpen?: () => void;
 }
 
@@ -19,7 +19,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ onModelChange, onChatOpen
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [geminiApiKey, setGeminiApiKey] = useState('');
   const [openaiApiKey, setOpenaiApiKey] = useState('');
-  const [selectedProvider, setSelectedProvider] = useState<"ollama" | "gemini" | "openai">("gemini");
+  const [selectedProvider, setSelectedProvider] = useState<"ollama" | "gemini" | "openai" | "groq">("gemini");
   const [selectedOllamaModel, setSelectedOllamaModel] = useState<string>("");
   const [ollamaUrl, setOllamaUrl] = useState<string>("http://localhost:11434");
   const [openaiModels] = useState<string[]>(["gpt-4o-mini", "gpt-4o", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"]);
@@ -293,7 +293,8 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ onModelChange, onChatOpen
 
       {/* Help text */}
       <div className="text-xs text-gray-600 space-y-1">
-        <div>💡 <strong>Gemini:</strong> Fast, cloud-based, requires API key (free tier available)</div>
+        <div>🎤 <strong>Audio:</strong> Uses Groq Whisper for transcription (configure GROQ_API_KEY)</div>
+        <div>💡 <strong>Gemini:</strong> Fast, cloud-based, supports audio analysis (free tier available)</div>
         <div>💡 <strong>OpenAI:</strong> Premium AI, 2.5M tokens/day, requires API key</div>
         <div>💡 <strong>Ollama:</strong> Private, local, requires Ollama installation</div>
       </div>

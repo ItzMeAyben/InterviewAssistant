@@ -19,26 +19,50 @@ export class ProcessingHelper {
   constructor(appState: AppState) {
     this.appState = appState
     
-    // Check provider preference (OpenAI > Ollama > Gemini)
+    // Check provider preference (OpenAI > Groq > Ollama > Gemini)
     const openaiApiKey = process.env.OPENAI_API_KEY
+    const groqApiKey = process.env.GROQ_API_KEY
     const useOllama = process.env.USE_OLLAMA === "true"
     const ollamaModel = process.env.OLLAMA_MODEL
     const ollamaUrl = process.env.OLLAMA_URL || "http://localhost:11434"
     const openaiModel = process.env.OPENAI_MODEL || "gpt-4o-mini"
 
+    // Choose main provider (OpenAI > Ollama > Gemini)
+    let mainProvider: "openai" | "ollama" | "gemini" = "gemini"
+    let mainApiKey = ""
+    let mainModel = ""
+
     if (openaiApiKey) {
-      console.log("[ProcessingHelper] Initializing with OpenAI")
-      this.llmHelper = new LLMHelper(undefined, false, ollamaModel, ollamaUrl, "openai", openaiApiKey, openaiModel)
+      mainProvider = "openai"
+      mainApiKey = openaiApiKey
+      mainModel = openaiModel
+      console.log("[ProcessingHelper] Main provider: OpenAI")
     } else if (useOllama) {
-      console.log("[ProcessingHelper] Initializing with Ollama")
-      this.llmHelper = new LLMHelper(undefined, true, ollamaModel, ollamaUrl, "ollama")
+      mainProvider = "ollama"
+      console.log("[ProcessingHelper] Main provider: Ollama")
     } else {
       const geminiApiKey = process.env.GEMINI_API_KEY
       if (!geminiApiKey) {
-        throw new Error("No API keys found. Set GEMINI_API_KEY, or OPENAI_API_KEY, or enable Ollama with USE_OLLAMA=true")
+        throw new Error("No API keys found. Set GEMINI_API_KEY, OPENAI_API_KEY, GROQ_API_KEY, or enable Ollama with USE_OLLAMA=true")
       }
-      console.log("[ProcessingHelper] Initializing with Gemini")
-      this.llmHelper = new LLMHelper(geminiApiKey, false, undefined, undefined, "gemini")
+      mainProvider = "gemini"
+      mainApiKey = geminiApiKey
+      console.log("[ProcessingHelper] Main provider: Gemini")
+    }
+
+    // Always initialize Groq for audio transcription if API key is available
+    const groqParam = groqApiKey || undefined
+    if (groqApiKey) {
+      console.log("[ProcessingHelper] Groq available for audio transcription")
+    }
+
+    // Initialize LLMHelper with main provider and optional Groq
+    if (mainProvider === "openai") {
+      this.llmHelper = new LLMHelper(undefined, false, ollamaModel, ollamaUrl, "openai", mainApiKey, mainModel, groqParam)
+    } else if (mainProvider === "ollama") {
+      this.llmHelper = new LLMHelper(undefined, true, ollamaModel, ollamaUrl, "ollama", undefined, undefined, groqParam)
+    } else {
+      this.llmHelper = new LLMHelper(mainApiKey, false, undefined, undefined, "gemini", undefined, undefined, groqParam)
     }
   }
 

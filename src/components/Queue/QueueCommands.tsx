@@ -43,7 +43,34 @@ const QueueCommands: React.FC<QueueCommandsProps> = ({
     if (!isRecording) {
       // Start recording
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        // Try to get both microphone and system audio if available
+        let stream: MediaStream
+
+        try {
+          // First try to get system audio (works on some systems)
+          // @ts-ignore - Experimental API
+          stream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: false,
+              noiseSuppression: false,
+              autoGainControl: false,
+              // @ts-ignore - System audio capture (experimental)
+              mediaSource: 'screen'
+            }
+          })
+          console.log('Recording with system audio capture')
+        } catch (systemAudioError) {
+          // Fallback to microphone only
+          console.log('System audio not available, using microphone only')
+          stream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true
+            }
+          })
+        }
+
         const recorder = new MediaRecorder(stream)
         recorder.ondataavailable = (e) => chunks.current.push(e.data)
         recorder.onstop = async () => {

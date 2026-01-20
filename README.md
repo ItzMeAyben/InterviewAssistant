@@ -40,14 +40,25 @@ npm install
    GEMINI_API_KEY=your_api_key_here
    ```
    
-   **For Ollama (Local/Private AI):**
-   ```env
-   USE_OLLAMA=true
-   OLLAMA_MODEL=llama3.2
-   OLLAMA_URL=http://localhost:11434
-   ```
-   
-   - Save the file
+    **For OpenAI (Premium AI):**
+    ```env
+    OPENAI_API_KEY=your_openai_api_key_here
+    OPENAI_MODEL=gpt-4o-mini
+    ```
+
+    **For Groq (Fast Audio Transcription):**
+    ```env
+    GROQ_API_KEY=your_groq_api_key_here
+    ```
+
+    **For Ollama (Local/Private AI):**
+    ```env
+    USE_OLLAMA=true
+    OLLAMA_MODEL=llama3.2
+    OLLAMA_URL=http://localhost:11434
+    ```
+
+    - Save the file
 
 ### Running the App
 

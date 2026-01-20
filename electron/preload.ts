@@ -25,11 +25,13 @@ interface ElectronAPI {
 
   onUnauthorized: (callback: () => void) => () => void
   onDebugError: (callback: (error: string) => void) => () => void
+  onToggleChat: (callback: () => void) => () => void
   takeScreenshot: () => Promise<void>
   moveWindowLeft: () => Promise<void>
   moveWindowRight: () => Promise<void>
   moveWindowUp: () => Promise<void>
   moveWindowDown: () => Promise<void>
+  toggleChat: () => Promise<void>
   analyzeAudioFromBase64: (data: string, mimeType: string) => Promise<{ text: string; timestamp: number }>
   analyzeAudioFile: (path: string) => Promise<{ text: string; timestamp: number }>
   analyzeImageFile: (path: string) => Promise<void>
@@ -171,10 +173,18 @@ contextBridge.exposeInMainWorld("electronAPI", {
       ipcRenderer.removeListener(PROCESSING_EVENTS.UNAUTHORIZED, subscription)
     }
   },
+  onToggleChat: (callback: () => void) => {
+    const subscription = () => callback()
+    ipcRenderer.on("toggle-chat", subscription)
+    return () => {
+      ipcRenderer.removeListener("toggle-chat", subscription)
+    }
+  },
   moveWindowLeft: () => ipcRenderer.invoke("move-window-left"),
   moveWindowRight: () => ipcRenderer.invoke("move-window-right"),
   moveWindowUp: () => ipcRenderer.invoke("move-window-up"),
   moveWindowDown: () => ipcRenderer.invoke("move-window-down"),
+  toggleChat: () => ipcRenderer.invoke("toggle-chat"),
   analyzeAudioFromBase64: (data: string, mimeType: string) => ipcRenderer.invoke("analyze-audio-base64", data, mimeType),
   analyzeAudioFile: (path: string) => ipcRenderer.invoke("analyze-audio-file", path),
   analyzeImageFile: (path: string) => ipcRenderer.invoke("analyze-image-file", path),

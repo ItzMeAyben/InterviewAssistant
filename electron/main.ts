@@ -171,14 +171,23 @@ export class AppState {
   public moveWindowRight(): void {
     this.windowHelper.moveWindowRight()
   }
+
   public moveWindowDown(): void {
     this.windowHelper.moveWindowDown()
   }
+
   public moveWindowUp(): void {
     this.windowHelper.moveWindowUp()
   }
 
-  public centerAndShowWindow(): void {
+  public async toggleChat(): Promise<void> {
+    const mainWindow = this.getMainWindow()
+    if (mainWindow) {
+      mainWindow.webContents.send("toggle-chat")
+    }
+   }
+
+   public centerAndShowWindow(): void {
     this.windowHelper.centerAndShowWindow()
   }
 

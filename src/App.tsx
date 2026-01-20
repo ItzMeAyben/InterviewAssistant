@@ -76,6 +76,14 @@ const App: React.FC = () => {
   const [isChatOpen, setIsChatOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
+  // Listen for chat toggle from shortcut
+  useEffect(() => {
+    const cleanup = window.electronAPI.onToggleChat(() => {
+      setIsChatOpen(prev => !prev)
+    })
+    return cleanup
+  }, [])
+
   // Effect for height monitoring
   useEffect(() => {
     const cleanup = window.electronAPI.onResetView(() => {

@@ -67,20 +67,40 @@ export class ShortcutsHelper {
     // New shortcuts for moving the window
     globalShortcut.register("CommandOrControl+Left", () => {
       console.log("Command/Ctrl + Left pressed. Moving window left.")
-      this.appState.moveWindowLeft()
+      const mainWindow = this.appState.getMainWindow()
+      if (mainWindow) {
+        const [x, y] = mainWindow.getPosition()
+        mainWindow.setPosition(x - 50, y)
+        console.log(`Window moved to: ${x - 50}, ${y}`)
+      }
     })
 
     globalShortcut.register("CommandOrControl+Right", () => {
       console.log("Command/Ctrl + Right pressed. Moving window right.")
-      this.appState.moveWindowRight()
+      const mainWindow = this.appState.getMainWindow()
+      if (mainWindow) {
+        const [x, y] = mainWindow.getPosition()
+        mainWindow.setPosition(x + 50, y)
+        console.log(`Window moved to: ${x + 50}, ${y}`)
+      }
     })
     globalShortcut.register("CommandOrControl+Down", () => {
-      console.log("Command/Ctrl + down pressed. Moving window down.")
-      this.appState.moveWindowDown()
+      console.log("Command/Ctrl + Down pressed. Moving window down.")
+      const mainWindow = this.appState.getMainWindow()
+      if (mainWindow) {
+        const [x, y] = mainWindow.getPosition()
+        mainWindow.setPosition(x, y + 50)
+        console.log(`Window moved to: ${x}, ${y + 50}`)
+      }
     })
     globalShortcut.register("CommandOrControl+Up", () => {
-      console.log("Command/Ctrl + Up pressed. Moving window Up.")
-      this.appState.moveWindowUp()
+      console.log("Command/Ctrl + Up pressed. Moving window up.")
+      const mainWindow = this.appState.getMainWindow()
+      if (mainWindow) {
+        const [x, y] = mainWindow.getPosition()
+        mainWindow.setPosition(x, y - 50)
+        console.log(`Window moved to: ${x}, ${y - 50}`)
+      }
     })
 
     globalShortcut.register("CommandOrControl+B", () => {
@@ -98,6 +118,16 @@ export class ShortcutsHelper {
             }
           }, 100)
         }
+      }
+    })
+
+    // Toggle chat shortcut
+    globalShortcut.register("CommandOrControl+K", async () => {
+      console.log("Command/Ctrl + K pressed. Toggling chat...")
+      try {
+        await this.appState.toggleChat()
+      } catch (error) {
+        console.error("Error toggling chat:", error)
       }
     })
 

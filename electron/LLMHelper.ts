@@ -2,16 +2,49 @@ import { GoogleGenerativeAI, GenerativeModel } from "@google/generative-ai"
 import fs from "fs"
 import OpenAI from "openai"
 
+// Groq client for audio transcription
+class GroqClient {
+  private apiKey: string
+  private baseURL = "https://api.groq.com/openai/v1"
+
+  constructor(apiKey: string) {
+    this.apiKey = apiKey
+  }
+
+  async createTranscription(file: Buffer, filename: string, mimeType: string) {
+    const formData = new FormData()
+    // Create blob from buffer
+    formData.append('file', new Blob([file as any], { type: mimeType }), filename)
+    formData.append('model', 'whisper-large-v3-turbo')
+    formData.append('response_format', 'json')
+
+    const response = await fetch(`${this.baseURL}/audio/transcriptions`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+      },
+      body: formData as any,
+    })
+
+    if (!response.ok) {
+      throw new Error(`Groq API error: ${response.status} ${response.statusText}`)
+    }
+
+    return response.json()
+  }
+}
+
 interface OllamaResponse {
   response: string
   done: boolean
 }
 
-type Provider = "gemini" | "ollama" | "openai"
+type Provider = "gemini" | "ollama" | "openai" | "groq"
 
 export class LLMHelper {
   private geminiModel: GenerativeModel | null = null
   private openaiClient: OpenAI | null = null
+  private groqClient: GroqClient | null = null
   private readonly systemPrompt = `You are an AI assistant that analyzes screenshots. Be extremely concise. Focus on key observations and 1-2 actionable next steps.`
   private provider: Provider = "gemini"
   private ollamaModel: string = "llama3.2"
@@ -25,7 +58,8 @@ export class LLMHelper {
     ollamaUrl?: string,
     provider: Provider = "gemini",
     openaiApiKey?: string,
-    openaiModel?: string
+    openaiModel?: string,
+    groqApiKey?: string
   ) {
     this.provider = provider
 
@@ -50,6 +84,12 @@ export class LLMHelper {
       console.log("[LLMHelper] Using Google Gemini")
     } else {
       throw new Error("Invalid provider specified")
+    }
+
+    // Always initialize Groq client for audio transcription if API key is provided
+    if (groqApiKey) {
+      this.groqClient = new GroqClient(groqApiKey)
+      console.log("[LLMHelper] Groq client initialized for audio transcription")
     }
   }
 
@@ -152,22 +192,69 @@ export class LLMHelper {
 
 Be extremely brief and direct.`;
 
-      if (this.provider === "ollama") {
-        // Ollama doesn't support audio, so provide generic response
-        return { text: "Audio analysis not supported with Ollama. Switch to Gemini or OpenAI for audio processing.", timestamp: Date.now() };
-      } else if (this.provider === "openai") {
-        // OpenAI supports audio through whisper, but for chat we can use text transcription
-        // For now, provide a text-based response
-        if (!this.openaiClient) throw new Error("OpenAI client not initialized");
+      // Always use Groq for audio transcription first
+      if (this.groqClient) {
+        try {
+          // Convert base64 to buffer
+          const audioBuffer = Buffer.from(data, 'base64');
+          const transcription = await this.groqClient.createTranscription(audioBuffer, 'audio.webm', mimeType);
+          const transcript = transcription.text || "No speech detected";
 
-        const response = await this.openaiClient.chat.completions.create({
-          model: this.openaiModel,
-          messages: [{ role: "user", content: `Audio analysis request: ${prompt} (Note: Raw audio data provided, transcribe if possible)` }],
-          // o1 and gpt-5 models don't support temperature parameter
-          ...(this.openaiModel.startsWith('o1') || this.openaiModel.startsWith('gpt-5') ? {} : { temperature: 0.7 }),
-        });
-        const text = response.choices[0]?.message?.content || "Audio analysis failed";
-        return { text, timestamp: Date.now() };
+          // Now use the selected AI provider to analyze the transcript
+          const analysisPrompt = `Analyze this transcribed audio content and provide feedback/answers: "${transcript}"
+
+Provide a helpful response based on what was said in the audio. Be concise and actionable.`;
+
+          if (this.provider === "ollama") {
+            const analysis = await this.callOllama(analysisPrompt, "You are a helpful AI assistant. Provide clear, concise answers.");
+            return {
+              text: `🎤 Audio Transcript: "${transcript}"\n\n💭 Analysis: ${analysis}`,
+              timestamp: Date.now()
+            };
+          } else if (this.provider === "openai") {
+            if (!this.openaiClient) throw new Error("OpenAI client not initialized");
+            const response = await this.openaiClient.chat.completions.create({
+              model: this.openaiModel,
+              messages: [{ role: "user", content: analysisPrompt }],
+              ...(this.openaiModel.startsWith('o1') || this.openaiModel.startsWith('gpt-5') ? {} : { temperature: 0.7 }),
+            });
+            const analysis = response.choices[0]?.message?.content || "Analysis failed";
+            return {
+              text: `🎤 Audio Transcript: "${transcript}"\n\n💭 Analysis: ${analysis}`,
+              timestamp: Date.now()
+            };
+          } else if (this.provider === "gemini") {
+            if (!this.geminiModel) throw new Error("Gemini model not initialized");
+            const result = await this.geminiModel.generateContent([analysisPrompt, {
+              inlineData: {
+                data: data,
+                mimeType: mimeType
+              }
+            }]);
+            const response = await result.response;
+            const analysis = response.text();
+            return {
+              text: `🎤 Audio Transcript: "${transcript}"\n\n💭 Analysis: ${analysis}`,
+              timestamp: Date.now()
+            };
+          } else {
+            return {
+              text: `🎤 Audio Transcript: "${transcript}"\n\n⚠️ No AI provider configured for analysis.`,
+              timestamp: Date.now()
+            };
+          }
+        } catch (groqError) {
+          console.error("Groq transcription failed:", groqError);
+          // Fallback: try to analyze with current provider directly
+          console.log("Falling back to direct audio analysis with current provider");
+        }
+      }
+
+      // Fallback if Groq is not available or failed
+      if (this.provider === "ollama") {
+        return { text: "Audio analysis not supported with Ollama. Configure Groq API key for audio transcription.", timestamp: Date.now() };
+      } else if (this.provider === "openai") {
+        return { text: "Audio transcription requires Groq API key. Configure GROQ_API_KEY for audio processing.", timestamp: Date.now() };
       } else if (this.provider === "gemini") {
         if (!this.geminiModel) throw new Error("Gemini model not initialized");
         const audioPart = {
