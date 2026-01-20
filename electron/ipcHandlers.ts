@@ -175,13 +175,24 @@ export function initializeIpcHandlers(appState: AppState): void {
     }
   });
 
-  ipcMain.handle("switch-to-gemini", async (_, apiKey?: string) => {
+   ipcMain.handle("switch-to-gemini", async (_, apiKey?: string) => {
     try {
       const llmHelper = appState.processingHelper.getLLMHelper();
       await llmHelper.switchToGemini(apiKey);
       return { success: true };
     } catch (error: any) {
       console.error("Error switching to Gemini:", error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle("switch-to-openai", async (_, apiKey?: string, model?: string) => {
+    try {
+      const llmHelper = appState.processingHelper.getLLMHelper();
+      await llmHelper.switchToOpenAI(apiKey, model);
+      return { success: true };
+    } catch (error: any) {
+      console.error("Error switching to OpenAI:", error);
       return { success: false, error: error.message };
     }
   });

@@ -32,8 +32,14 @@ export class ShortcutsHelper {
       }
     })
 
-    // Removed CommandOrControl+Enter shortcut to avoid conflicts with chat input
-    // Users can use the UI button to process screenshots instead
+    globalShortcut.register("CommandOrControl+Enter", async () => {
+      console.log("Command/Ctrl + Enter pressed. Starting processing...")
+      try {
+        await this.appState.processingHelper.processScreenshots()
+      } catch (error) {
+        console.error("Error processing screenshots:", error)
+      }
+    })
 
     globalShortcut.register("CommandOrControl+R", () => {
       console.log(

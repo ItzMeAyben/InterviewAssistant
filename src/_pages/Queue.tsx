@@ -16,6 +16,7 @@ interface QueueProps {
   setView: React.Dispatch<React.SetStateAction<"queue" | "solutions" | "debug">>
   isChatOpen: boolean
   setIsChatOpen: React.Dispatch<React.SetStateAction<boolean>>
+  onModelChange?: (provider: "ollama" | "gemini" | "openai", model: string) => void
 }
 
 const Queue: React.FC<QueueProps> = ({ setView, isChatOpen, setIsChatOpen }) => {
@@ -207,7 +208,7 @@ const Queue: React.FC<QueueProps> = ({ setView, isChatOpen, setIsChatOpen }) => 
     setIsSettingsOpen(!isSettingsOpen)
   }
 
-  const handleModelChange = (provider: "ollama" | "gemini", model: string) => {
+  const handleModelChange = (provider: "ollama" | "gemini" | "openai", model: string) => {
     setCurrentModel({ provider, model })
     // Update chat messages to reflect the model change
     const modelName = provider === "ollama" ? model : "Gemini 3 Pro"
@@ -281,19 +282,28 @@ const Queue: React.FC<QueueProps> = ({ setView, isChatOpen, setIsChatOpen }) => 
                       style={{ wordBreak: "break-word", lineHeight: "1.4" }}
                      >
                        <div className="prose prose-sm max-w-none">
-                         <ReactMarkdown
-                          components={{
-                            p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />,
-                             code: ({node, ...props}) => (
+                          <ReactMarkdown
+                           components={{
+                             p: (props) => <p className="mb-2 last:mb-0" {...props} />,
+                             code: (props) => (
                                <code className="bg-gray-200/50 px-1 py-0.5 rounded text-xs" {...props} />
                              ),
-                            ul: ({node, ...props}) => <ul className="list-disc ml-4 mb-2" {...props} />,
-                            ol: ({node, ...props}) => <ol className="list-decimal ml-4 mb-2" {...props} />,
-                            li: ({node, ...props}) => <li className="mb-1" {...props} />,
-                            strong: ({node, ...props}) => <strong className="font-semibold" {...props} />,
-                            em: ({node, ...props}) => <em className="italic" {...props} />,
-                          }}
-                        >
+                             pre: (props) => (
+                               <pre className="bg-gray-200/50 p-2 rounded text-xs overflow-x-auto" {...props} />
+                             ),
+                             ul: (props) => <ul className="list-disc ml-4 mb-2" {...props} />,
+                             ol: (props) => <ol className="list-decimal ml-4 mb-2" {...props} />,
+                             li: (props) => <li className="mb-1" {...props} />,
+                             strong: (props) => <strong className="font-semibold" {...props} />,
+                             em: (props) => <em className="italic" {...props} />,
+                             h1: (props) => <h1 className="text-lg font-bold mb-2" {...props} />,
+                             h2: (props) => <h2 className="text-base font-bold mb-2" {...props} />,
+                             h3: (props) => <h3 className="text-sm font-bold mb-1" {...props} />,
+                             blockquote: (props) => (
+                               <blockquote className="border-l-4 border-gray-300 pl-4 italic" {...props} />
+                             ),
+                           }}
+                         >
                           {msg.text}
                         </ReactMarkdown>
                        </div>

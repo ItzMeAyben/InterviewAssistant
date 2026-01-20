@@ -2,9 +2,11 @@
 
 import path from "node:path"
 import fs from "node:fs"
-import { app } from "electron"
+import { app, desktopCapturer } from "electron"
 import { v4 as uuidv4 } from "uuid"
 import screenshot from "screenshot-desktop"
+import { exec } from "node:child_process"
+import { promisify } from "node:util"
 
 export class ScreenshotHelper {
   private screenshotQueue: string[] = []
@@ -79,16 +81,37 @@ export class ScreenshotHelper {
     showMainWindow: () => void
   ): Promise<string> {
     try {
+      console.log("Starting screenshot process...")
       hideMainWindow()
-      
+
       // Add a small delay to ensure window is hidden
       await new Promise(resolve => setTimeout(resolve, 100))
-      
+
       let screenshotPath = ""
 
       if (this.view === "queue") {
         screenshotPath = path.join(this.screenshotDir, `${uuidv4()}.png`)
-        await screenshot({ filename: screenshotPath })
+        console.log("Taking screenshot to:", screenshotPath)
+        console.log("Directory exists:", fs.existsSync(this.screenshotDir))
+
+        if (process.platform === "darwin") {
+          // Use native screencapture on macOS
+          const execAsync = promisify(exec)
+          try {
+            await execAsync(`screencapture -x "${screenshotPath}"`)
+            console.log("Screenshot taken with screencapture, file exists:", fs.existsSync(screenshotPath))
+          } catch (error) {
+            console.error("screencapture failed:", error)
+            throw error
+          }
+        } else {
+          await screenshot({ filename: screenshotPath })
+          console.log("Screenshot taken with library, checking if file exists:", fs.existsSync(screenshotPath))
+        }
+
+        if (!fs.existsSync(screenshotPath)) {
+          throw new Error(`Screenshot file was not created at ${screenshotPath}`)
+        }
 
         this.screenshotQueue.push(screenshotPath)
         if (this.screenshotQueue.length > this.MAX_SCREENSHOTS) {
@@ -103,7 +126,27 @@ export class ScreenshotHelper {
         }
       } else {
         screenshotPath = path.join(this.extraScreenshotDir, `${uuidv4()}.png`)
-        await screenshot({ filename: screenshotPath })
+        console.log("Taking screenshot to:", screenshotPath)
+        console.log("Directory exists:", fs.existsSync(this.extraScreenshotDir))
+
+        if (process.platform === "darwin") {
+          // Use native screencapture on macOS
+          const execAsync = promisify(exec)
+          try {
+            await execAsync(`screencapture -x "${screenshotPath}"`)
+            console.log("Screenshot taken with screencapture, file exists:", fs.existsSync(screenshotPath))
+          } catch (error) {
+            console.error("screencapture failed:", error)
+            throw error
+          }
+        } else {
+          await screenshot({ filename: screenshotPath })
+          console.log("Screenshot taken with library, checking if file exists:", fs.existsSync(screenshotPath))
+        }
+
+        if (!fs.existsSync(screenshotPath)) {
+          throw new Error(`Screenshot file was not created at ${screenshotPath}`)
+        }
 
         this.extraScreenshotQueue.push(screenshotPath)
         if (this.extraScreenshotQueue.length > this.MAX_SCREENSHOTS) {

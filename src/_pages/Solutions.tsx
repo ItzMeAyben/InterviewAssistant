@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from "react"
 import { useQuery, useQueryClient } from "react-query"
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
 import { dracula } from "react-syntax-highlighter/dist/esm/styles/prism"
+import ReactMarkdown from "react-markdown"
 
 import ScreenshotQueue from "../components/Queue/ScreenshotQueue"
 import {
@@ -38,11 +39,40 @@ export const ContentSection = ({
           Extracting problem statement...
         </p>
       </div>
-    ) : (
-      <div className="text-[13px] leading-[1.4] text-gray-100 max-w-[600px]">
-        {content}
-      </div>
-    )}
+     ) : (
+       <div className="text-[13px] leading-[1.4] text-gray-100 max-w-[600px]">
+         {title === "Screenshot Result" ? (
+           <div className="prose prose-sm max-w-none prose-invert">
+             <ReactMarkdown
+               components={{
+                 p: (props: any) => <p className="mb-2 last:mb-0" {...props} />,
+                 code: (props: any) => (
+                   <code className="bg-gray-800/50 px-1 py-0.5 rounded text-xs" {...props} />
+                 ),
+                 pre: (props: any) => (
+                   <pre className="bg-gray-800/50 p-3 rounded text-xs overflow-x-auto my-2" {...props} />
+                 ),
+                 ul: (props: any) => <ul className="list-disc ml-4 mb-2" {...props} />,
+                 ol: (props: any) => <ol className="list-decimal ml-4 mb-2" {...props} />,
+                 li: (props: any) => <li className="mb-1" {...props} />,
+                 strong: (props: any) => <strong className="font-semibold" {...props} />,
+                 em: (props: any) => <em className="italic" {...props} />,
+                 h1: (props: any) => <h1 className="text-base font-bold mb-2" {...props} />,
+                 h2: (props: any) => <h2 className="text-sm font-bold mb-2" {...props} />,
+                 h3: (props: any) => <h3 className="text-xs font-bold mb-1" {...props} />,
+                 blockquote: (props: any) => (
+                   <blockquote className="border-l-4 border-gray-600 pl-4 italic" {...props} />
+                 ),
+               }}
+             >
+               {typeof content === 'string' ? content : String(content)}
+             </ReactMarkdown>
+           </div>
+         ) : (
+           content
+         )}
+       </div>
+     )}
   </div>
 )
 const SolutionSection = ({

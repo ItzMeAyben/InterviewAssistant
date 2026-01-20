@@ -19,21 +19,26 @@ export class ProcessingHelper {
   constructor(appState: AppState) {
     this.appState = appState
     
-    // Check if user wants to use Ollama
+    // Check provider preference (OpenAI > Ollama > Gemini)
+    const openaiApiKey = process.env.OPENAI_API_KEY
     const useOllama = process.env.USE_OLLAMA === "true"
-    const ollamaModel = process.env.OLLAMA_MODEL // Don't set default here, let LLMHelper auto-detect
+    const ollamaModel = process.env.OLLAMA_MODEL
     const ollamaUrl = process.env.OLLAMA_URL || "http://localhost:11434"
-    
-    if (useOllama) {
+    const openaiModel = process.env.OPENAI_MODEL || "gpt-4o-mini"
+
+    if (openaiApiKey) {
+      console.log("[ProcessingHelper] Initializing with OpenAI")
+      this.llmHelper = new LLMHelper(undefined, false, ollamaModel, ollamaUrl, "openai", openaiApiKey, openaiModel)
+    } else if (useOllama) {
       console.log("[ProcessingHelper] Initializing with Ollama")
-      this.llmHelper = new LLMHelper(undefined, true, ollamaModel, ollamaUrl)
+      this.llmHelper = new LLMHelper(undefined, true, ollamaModel, ollamaUrl, "ollama")
     } else {
-      const apiKey = process.env.GEMINI_API_KEY
-      if (!apiKey) {
-        throw new Error("GEMINI_API_KEY not found in environment variables. Set GEMINI_API_KEY or enable Ollama with USE_OLLAMA=true")
+      const geminiApiKey = process.env.GEMINI_API_KEY
+      if (!geminiApiKey) {
+        throw new Error("No API keys found. Set GEMINI_API_KEY, or OPENAI_API_KEY, or enable Ollama with USE_OLLAMA=true")
       }
       console.log("[ProcessingHelper] Initializing with Gemini")
-      this.llmHelper = new LLMHelper(apiKey, false)
+      this.llmHelper = new LLMHelper(geminiApiKey, false, undefined, undefined, "gemini")
     }
   }
 
@@ -57,7 +62,13 @@ export class ProcessingHelper {
         mainWindow.webContents.send(this.appState.PROCESSING_EVENTS.INITIAL_START);
         this.appState.setView('solutions');
         try {
-          const audioResult = await this.llmHelper.analyzeAudioFile(lastPath);
+          // Read audio file and convert to base64 for analysis
+          const fs = require('fs').promises;
+          const audioData = await fs.readFile(lastPath);
+          const base64Data = audioData.toString('base64');
+          const mimeType = lastPath.endsWith('.mp3') ? 'audio/mpeg' : 'audio/wav';
+
+          const audioResult = await this.llmHelper.analyzeAudioFromBase64(base64Data, mimeType);
           mainWindow.webContents.send(this.appState.PROCESSING_EVENTS.PROBLEM_EXTRACTED, audioResult);
           this.appState.setProblemInfo({ problem_statement: audioResult.text, input_format: {}, output_format: {}, constraints: [], test_cases: [] });
           return;
@@ -75,7 +86,7 @@ export class ProcessingHelper {
       try {
         const imageResult = await this.llmHelper.analyzeImageFile(lastPath);
         const problemInfo = {
-          problem_statement: imageResult.text,
+          problem_statement: typeof imageResult === 'string' ? imageResult : imageResult.text,
           input_format: { description: "Generated from screenshot", parameters: [] as any[] },
           output_format: { description: "Generated from screenshot", type: "string", subtype: "text" },
           complexity: { time: "N/A", space: "N/A" },
@@ -111,21 +122,14 @@ export class ProcessingHelper {
           throw new Error("No problem info available")
         }
 
-        // Get current solution from state
-        const currentSolution = await this.llmHelper.generateSolution(problemInfo)
-        const currentCode = currentSolution.solution.code
-
-        // Debug the solution using vision model
-        const debugResult = await this.llmHelper.debugSolutionWithImages(
-          problemInfo,
-          currentCode,
-          extraScreenshotQueue
-        )
+        // For now, provide a simple debug response using chat
+        const debugPrompt = `Debug this coding problem. Problem: ${JSON.stringify(problemInfo)}. Provide debugging suggestions based on the screenshots.`
+        const debugResult = await this.llmHelper.chatWithGemini(debugPrompt)
 
         this.appState.setHasDebugged(true)
         mainWindow.webContents.send(
           this.appState.PROCESSING_EVENTS.DEBUG_SUCCESS,
-          debugResult
+          { solution: { code: debugResult, thoughts: "Debug analysis", time_complexity: "N/A", space_complexity: "N/A" } }
         )
 
       } catch (error: any) {
@@ -161,7 +165,12 @@ export class ProcessingHelper {
 
   // Add audio file processing method
   public async processAudioFile(filePath: string) {
-    return this.llmHelper.analyzeAudioFile(filePath);
+    // Read audio file and convert to base64 for analysis
+    const fs = require('fs').promises;
+    const audioData = await fs.readFile(filePath);
+    const base64Data = audioData.toString('base64');
+    const mimeType = filePath.endsWith('.mp3') ? 'audio/mpeg' : 'audio/wav';
+    return this.llmHelper.analyzeAudioFromBase64(base64Data, mimeType);
   }
 
   public getLLMHelper() {

@@ -277,7 +277,7 @@ async function initializeApp() {
   app.whenReady().then(() => {
     console.log("App is ready")
     appState.createWindow()
-    appState.createTray()
+    // appState.createTray() // Removed to keep app completely hidden from menu bar
     // Register global shortcuts using ShortcutsHelper
     appState.shortcutsHelper.registerGlobalShortcuts()
   })

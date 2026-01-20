@@ -93,6 +93,7 @@ export class WindowHelper {
       focusable: true,
       resizable: true,
       movable: true,
+      skipTaskbar: true, // Hide from macOS Dock/taskbar
       x: 100, // Start at a visible position
       y: 100
     }

@@ -55,8 +55,15 @@ const QueueCommands: React.FC<QueueCommandsProps> = ({
             try {
               const result = await window.electronAPI.analyzeAudioFromBase64(base64Data, blob.type)
               setAudioResult(result.text)
-            } catch (err) {
-              setAudioResult('Audio analysis failed.')
+            } catch (err: any) {
+              console.error('Audio analysis error:', err)
+              if (err.message?.includes('429') || err.message?.includes('quota') || err.message?.includes('Too Many Requests')) {
+                setAudioResult('Audio analysis failed: Gemini API quota exceeded (20 requests/day free limit). Switch to Ollama in settings or wait for reset.')
+              } else if (err.message?.includes('403') || err.message?.includes('Forbidden')) {
+                setAudioResult('Audio analysis failed: Check your Gemini API key and billing status.')
+              } else {
+                setAudioResult('Audio analysis failed: ' + (err.message || 'Unknown error'))
+              }
             }
           }
           reader.readAsDataURL(blob)
