@@ -1,5 +1,5 @@
 {
-  "name": "interview-coder",
+  "name": "docsync",
   "version": "1.0.0",
   "main": "./dist-electron/main.js",
   "scripts": {
@@ -14,12 +14,13 @@
     "app:build": "npm run build && electron-builder",
     "watch": "tsc -p electron/tsconfig.json --watch",
     "start:bg": "npm start &>/dev/null &",
+    "start:bg:win": "start npm start",
     "start": "npm run app:dev",
     "dist": "npm run app:build"
   },
   "build": {
-    "appId": "com.electron.meeting-notes",
-    "productName": "Meeting Notes Coder",
+    "appId": "com.docsync.app",
+    "productName": "DocuSync",
     "files": [
       "dist/**/*",
       "dist-electron/**/*",
@@ -46,10 +47,7 @@
             "arm64"
           ]
         }
-      ],
-      "icon": "assets/icons/mac/icon.icns",
-      "hardenedRuntime": true,
-      "entitlements": "assets/entitlements.mac.plist"
+      ]
     },
     "win": {
       "target": [
@@ -97,8 +95,8 @@
     "publish": [
       {
         "provider": "github",
-        "owner": "ibttf",
-        "repo": "interview-coder-frontend"
+        "owner": "ItzMeAyben",
+        "repo": "InterviewAssistant"
       }
     ]
   },

@@ -73,11 +73,38 @@ This command automatically:
 - Waits for the server to be ready
 - Launches the Electron app
 
-#### Method 2: Production Build
+#### Method 2: Run in Background (No Terminal Window)
+```bash
+# macOS/Linux - runs silently in background
+npm run start:bg
+
+# Windows - opens in a new window
+npm run start:bg:win
+```
+
+#### Method 3: Production Build
+
+**Build for Current Platform:**
 ```bash
 npm run dist
 ```
-The built app will be in the `release` folder.
+
+**Build for Specific Platforms:**
+```bash
+# Windows (from any platform)
+npm run dist -- --win
+
+# macOS (from macOS only)
+npm run dist -- --mac
+
+# Linux
+npm run dist -- --linux
+```
+
+The built app will be in the `release` folder:
+- **Windows**: `release/DocuSync Setup.exe` (installer) and `release/DocuSync.exe` (portable)
+- **macOS**: `release/DocuSync.dmg`
+- **Linux**: `release/DocuSync.AppImage` and `.deb` package
 
 ## 🤖 AI Provider Options
 
@@ -108,7 +135,7 @@ The built app will be in the `release` folder.
 
 1. **Closing the App**: 
    - Press `Cmd + Q` (Mac) or `Ctrl + Q` (Windows/Linux) to quit
-   - Or use Activity Monitor/Task Manager to close `Interview Coder`
+    - Or use Activity Monitor/Task Manager to close `DocuSync`
    - The X button currently doesn't work (known issue)
 
 2. **If the app doesn't start**:
