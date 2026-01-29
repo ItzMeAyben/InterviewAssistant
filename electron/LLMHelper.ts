@@ -80,7 +80,7 @@ export class LLMHelper {
         throw new Error("Gemini API key required for Gemini provider")
       }
       const genAI = new GoogleGenerativeAI(geminiApiKey)
-      this.geminiModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
+      this.geminiModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" })
       console.log("[LLMHelper] Using Google Gemini")
     } else {
       throw new Error("Invalid provider specified")
@@ -389,7 +389,7 @@ Assistant:`;
   public getCurrentModel(): string {
     if (this.provider === "ollama") return this.ollamaModel;
     if (this.provider === "openai") return this.openaiModel;
-    if (this.provider === "gemini") return "gemini-2.5-flash";
+      if (this.provider === "gemini") return "gemini-2.5-flash-lite";
     return "unknown";
   }
 
@@ -428,9 +428,15 @@ Assistant:`;
 
   public async switchToGemini(apiKey?: string): Promise<void> {
     this.provider = "gemini";
-    if (apiKey) {
-      const genAI = new GoogleGenerativeAI(apiKey);
-      this.geminiModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+    // Use provided key or fall back to environment variable
+    const effectiveApiKey = apiKey || process.env.GEMINI_API_KEY;
+
+    if (effectiveApiKey) {
+      const genAI = new GoogleGenerativeAI(effectiveApiKey);
+      this.geminiModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+    } else if (!this.geminiModel) {
+      throw new Error("Gemini API key not provided and not found in environment");
     }
 
     console.log("[LLMHelper] Switched to Gemini");

@@ -22,7 +22,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ onModelChange, onChatOpen
   const [selectedProvider, setSelectedProvider] = useState<"ollama" | "gemini" | "openai" | "groq">("gemini");
   const [selectedOllamaModel, setSelectedOllamaModel] = useState<string>("");
   const [ollamaUrl, setOllamaUrl] = useState<string>("http://localhost:11434");
-  const [openaiModels] = useState<string[]>(["gpt-4o-mini", "gpt-4o", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"]);
+  const [openaiModels] = useState<string[]>(["gpt-5-nano", "gpt-4o-mini", "gpt-4o", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"]);
   const [selectedOpenaiModel, setSelectedOpenaiModel] = useState<string>("gpt-4o-mini");
 
   useEffect(() => {
@@ -95,7 +95,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ onModelChange, onChatOpen
         await loadCurrentConfig();
         setConnectionStatus('success');
         const modelName = selectedProvider === 'ollama' ? selectedOllamaModel :
-                        selectedProvider === 'openai' ? selectedOpenaiModel : 'gemini-2.5-flash';
+                        selectedProvider === 'openai' ? selectedOpenaiModel : 'gemini-2.5-flash-lite';
         onModelChange?.(selectedProvider, modelName);
         // Auto-open chat window after successful model change
         setTimeout(() => {

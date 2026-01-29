@@ -26,6 +26,12 @@ export interface ElectronAPI {
   analyzeAudioFromBase64: (data: string, mimeType: string) => Promise<{ text: string; timestamp: number }>
   analyzeAudioFile: (path: string) => Promise<{ text: string; timestamp: number }>
   quitApp: () => Promise<void>
+  getCurrentLlmConfig: () => Promise<{ provider: "ollama" | "gemini" | "openai"; model: string; isOllama: boolean }>
+  getAvailableOllamaModels: () => Promise<string[]>
+  switchToOllama: (model?: string, url?: string) => Promise<{ success: boolean; error?: string }>
+  switchToGemini: (apiKey?: string) => Promise<{ success: boolean; error?: string }>
+  switchToOpenAI: (apiKey?: string, model?: string) => Promise<{ success: boolean; error?: string }>
+  testLlmConnection: () => Promise<{ success: boolean; error?: string }>
   invoke: (channel: string, ...args: any[]) => Promise<any>
 }
 
